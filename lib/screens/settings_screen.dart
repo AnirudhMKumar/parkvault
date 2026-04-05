@@ -64,6 +64,176 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _editCompanyDetails(SettingsModel settings, SettingsProvider provider) {
+    final nameC = TextEditingController(text: settings.companyName);
+    final codeC = TextEditingController(text: settings.companyCode);
+    final locationC = TextEditingController(text: settings.selectedLocation);
+    final prefixC = TextEditingController(text: settings.ticketPrefix);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Company Details'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameC, decoration: const InputDecoration(labelText: 'Company Name')),
+              const SizedBox(height: 12),
+              TextField(controller: codeC, decoration: const InputDecoration(labelText: 'Company Code')),
+              const SizedBox(height: 12),
+              TextField(controller: locationC, decoration: const InputDecoration(labelText: 'Location')),
+              const SizedBox(height: 12),
+              TextField(controller: prefixC, decoration: const InputDecoration(labelText: 'Ticket Prefix')),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text(AppStrings.cancel)),
+          ElevatedButton(
+            onPressed: () async {
+              final updated = SettingsModel(
+                companyName: nameC.text.trim(),
+                companyCode: codeC.text.trim(),
+                selectedLocation: locationC.text.trim(),
+                ticketPrefix: prefixC.text.trim(),
+                bikeFee: settings.bikeFee, carFee: settings.carFee, taxiFee: settings.taxiFee,
+                busTruckFee: settings.busTruckFee, miniBusFee: settings.miniBusFee, suvFee: settings.suvFee,
+                twoWheelerCapacity: settings.twoWheelerCapacity, fourWheelerCapacity: settings.fourWheelerCapacity,
+                otherCapacity: settings.otherCapacity, qrEnabled: settings.qrEnabled,
+                valetEnabled: settings.valetEnabled, fastagEnabled: settings.fastagEnabled,
+                firstHourCharge: settings.firstHourCharge, additionalHourCharge: settings.additionalHourCharge,
+                fullDayCharge: settings.fullDayCharge, nightCharge: settings.nightCharge,
+                lostTicketCharge: settings.lostTicketCharge, valetCharge: settings.valetCharge,
+                version: settings.version,
+              );
+              await provider.saveSettings(updated);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text(AppStrings.save),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editFees(SettingsModel settings, SettingsProvider provider) {
+    final bikeC = TextEditingController(text: settings.bikeFee.toStringAsFixed(0));
+    final carC = TextEditingController(text: settings.carFee.toStringAsFixed(0));
+    final taxiC = TextEditingController(text: settings.taxiFee.toStringAsFixed(0));
+    final busC = TextEditingController(text: settings.busTruckFee.toStringAsFixed(0));
+    final miniC = TextEditingController(text: settings.miniBusFee.toStringAsFixed(0));
+    final suvC = TextEditingController(text: settings.suvFee.toStringAsFixed(0));
+    final firstC = TextEditingController(text: settings.firstHourCharge.toStringAsFixed(0));
+    final addC = TextEditingController(text: settings.additionalHourCharge.toStringAsFixed(0));
+    final fullC = TextEditingController(text: settings.fullDayCharge.toStringAsFixed(0));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Fee Configuration'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: bikeC, decoration: const InputDecoration(labelText: 'Bike Fee (₹)'), keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              TextField(controller: carC, decoration: const InputDecoration(labelText: 'Car Fee (₹)'), keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              TextField(controller: taxiC, decoration: const InputDecoration(labelText: 'Taxi Fee (₹)'), keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              TextField(controller: busC, decoration: const InputDecoration(labelText: 'Bus/Truck Fee (₹)'), keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              TextField(controller: miniC, decoration: const InputDecoration(labelText: 'Mini Bus Fee (₹)'), keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              TextField(controller: suvC, decoration: const InputDecoration(labelText: 'SUV Fee (₹)'), keyboardType: TextInputType.number),
+              const Divider(height: 24),
+              TextField(controller: firstC, decoration: const InputDecoration(labelText: 'First Hour Charge (₹)'), keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              TextField(controller: addC, decoration: const InputDecoration(labelText: 'Additional Hour (₹)'), keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              TextField(controller: fullC, decoration: const InputDecoration(labelText: 'Full Day Charge (₹)'), keyboardType: TextInputType.number),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text(AppStrings.cancel)),
+          ElevatedButton(
+            onPressed: () async {
+              final updated = SettingsModel(
+                companyName: settings.companyName, companyCode: settings.companyCode,
+                selectedLocation: settings.selectedLocation, ticketPrefix: settings.ticketPrefix,
+                bikeFee: double.tryParse(bikeC.text) ?? settings.bikeFee,
+                carFee: double.tryParse(carC.text) ?? settings.carFee,
+                taxiFee: double.tryParse(taxiC.text) ?? settings.taxiFee,
+                busTruckFee: double.tryParse(busC.text) ?? settings.busTruckFee,
+                miniBusFee: double.tryParse(miniC.text) ?? settings.miniBusFee,
+                suvFee: double.tryParse(suvC.text) ?? settings.suvFee,
+                firstHourCharge: double.tryParse(firstC.text) ?? settings.firstHourCharge,
+                additionalHourCharge: double.tryParse(addC.text) ?? settings.additionalHourCharge,
+                fullDayCharge: double.tryParse(fullC.text) ?? settings.fullDayCharge,
+                twoWheelerCapacity: settings.twoWheelerCapacity, fourWheelerCapacity: settings.fourWheelerCapacity,
+                otherCapacity: settings.otherCapacity, qrEnabled: settings.qrEnabled,
+                valetEnabled: settings.valetEnabled, fastagEnabled: settings.fastagEnabled,
+                nightCharge: settings.nightCharge, lostTicketCharge: settings.lostTicketCharge,
+                valetCharge: settings.valetCharge, version: settings.version,
+              );
+              await provider.saveSettings(updated);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text(AppStrings.save),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editCapacity(SettingsModel settings, SettingsProvider provider) {
+    final twoC = TextEditingController(text: settings.twoWheelerCapacity.toString());
+    final fourC = TextEditingController(text: settings.fourWheelerCapacity.toString());
+    final otherC = TextEditingController(text: settings.otherCapacity.toString());
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Capacity'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: twoC, decoration: const InputDecoration(labelText: '2-Wheeler Slots'), keyboardType: TextInputType.number),
+              const SizedBox(height: 12),
+              TextField(controller: fourC, decoration: const InputDecoration(labelText: '4-Wheeler Slots'), keyboardType: TextInputType.number),
+              const SizedBox(height: 12),
+              TextField(controller: otherC, decoration: const InputDecoration(labelText: 'Other Slots'), keyboardType: TextInputType.number),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text(AppStrings.cancel)),
+          ElevatedButton(
+            onPressed: () async {
+              final updated = SettingsModel(
+                companyName: settings.companyName, companyCode: settings.companyCode,
+                selectedLocation: settings.selectedLocation, ticketPrefix: settings.ticketPrefix,
+                bikeFee: settings.bikeFee, carFee: settings.carFee, taxiFee: settings.taxiFee,
+                busTruckFee: settings.busTruckFee, miniBusFee: settings.miniBusFee, suvFee: settings.suvFee,
+                twoWheelerCapacity: int.tryParse(twoC.text) ?? settings.twoWheelerCapacity,
+                fourWheelerCapacity: int.tryParse(fourC.text) ?? settings.fourWheelerCapacity,
+                otherCapacity: int.tryParse(otherC.text) ?? settings.otherCapacity,
+                qrEnabled: settings.qrEnabled, valetEnabled: settings.valetEnabled,
+                fastagEnabled: settings.fastagEnabled, firstHourCharge: settings.firstHourCharge,
+                additionalHourCharge: settings.additionalHourCharge, fullDayCharge: settings.fullDayCharge,
+                nightCharge: settings.nightCharge, lostTicketCharge: settings.lostTicketCharge,
+                valetCharge: settings.valetCharge, version: settings.version,
+              );
+              await provider.saveSettings(updated);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text(AppStrings.save),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
@@ -86,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildInfoRow('Company Name', settings.companyName),
               _buildInfoRow('Company Code', settings.companyCode),
               _buildInfoRow('Location', settings.selectedLocation),
-            ]),
+            ], onEdit: () => _editCompanyDetails(settings, settingsProvider)),
             const SizedBox(height: 16),
             _buildSectionCard(AppStrings.feeConfiguration, Icons.attach_money, [
               _buildInfoRow(
@@ -113,7 +283,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'SUV Fee',
                 '\u20B9${settings.suvFee.toStringAsFixed(0)}',
               ),
-            ]),
+              _buildInfoRow(
+                'First Hour',
+                '\u20B9${settings.firstHourCharge.toStringAsFixed(0)}',
+              ),
+              _buildInfoRow(
+                'Additional Hour',
+                '\u20B9${settings.additionalHourCharge.toStringAsFixed(0)}',
+              ),
+              _buildInfoRow(
+                'Full Day',
+                '\u20B9${settings.fullDayCharge.toStringAsFixed(0)}',
+              ),
+            ], onEdit: () => _editFees(settings, settingsProvider)),
             const SizedBox(height: 16),
             _buildSectionCard(AppStrings.capacity, Icons.meeting_room, [
               _buildInfoRow(
@@ -125,7 +307,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 '${settings.fourWheelerCapacity} slots',
               ),
               _buildInfoRow('Others', '${settings.otherCapacity} slots'),
-            ]),
+            ], onEdit: () => _editCapacity(settings, settingsProvider)),
             const SizedBox(height: 16),
             _buildSectionCard('Feature Toggles', Icons.toggle_on, [
               _buildToggleRow('QR Code', settings.qrEnabled, (value) async {
@@ -225,8 +407,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   message:
                       'Are you sure you want to reset all parking history?',
                   onConfirm: () async {
-                    await context.read<ParkingProvider>().loadEntries();
                     await _parkingService.resetEntries();
+                    await context.read<ParkingProvider>().loadEntries();
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -244,8 +426,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Reset Passes',
                   message: 'Are you sure you want to reset all passes?',
                   onConfirm: () async {
-                    await context.read<PassProvider>().loadPasses();
                     await _passService.resetPasses();
+                    await context.read<PassProvider>().loadPasses();
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -263,8 +445,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Reset Valet Tasks',
                   message: 'Are you sure you want to reset all valet tasks?',
                   onConfirm: () async {
-                    await context.read<ValetProvider>().loadTasks();
                     await _valetService.resetTasks();
+                    await context.read<ValetProvider>().loadTasks();
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -306,7 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionCard(String title, IconData icon, List<Widget> children) {
+  Widget _buildSectionCard(String title, IconData icon, List<Widget> children, {VoidCallback? onEdit}) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -319,13 +501,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Icon(icon, size: 20, color: AppColors.primary),
                 const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                if (onEdit != null)
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 20),
+                    color: AppColors.primary,
+                    onPressed: onEdit,
+                    tooltip: 'Edit $title',
+                  ),
               ],
             ),
             const Divider(height: 24),

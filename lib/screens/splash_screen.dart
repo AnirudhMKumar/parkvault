@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
               'Smart Parking Management',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 40),

@@ -39,6 +39,7 @@ class ParkingProvider extends ChangeNotifier {
     String? passId,
     String? paymentType,
     String? notes,
+    String? imagePath,
   }) async {
     _isLoading = true;
     _error = null;
@@ -52,6 +53,7 @@ class ParkingProvider extends ChangeNotifier {
         passId: passId,
         paymentType: paymentType,
         notes: notes,
+        imagePath: imagePath,
       );
       await loadEntries();
       return true;

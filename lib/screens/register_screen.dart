@@ -1,65 +1,90 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_strings.dart';
-import '../providers/auth_provider.dart';
-import 'dashboard_screen.dart';
-import 'register_screen.dart';
+import '../utils/validators.dart';
+import '../services/auth_service.dart';
+import '../services/settings_service.dart';
+import '../models/user_model.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _companyCodeController = TextEditingController();
-  String _selectedRole = 'admin';
+  String _selectedRole = 'operator';
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _companyCodeController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      final authProvider = context.read<AuthProvider>();
-      final success = await authProvider.login(
+      final settingsService = SettingsService();
+      final authService = AuthService();
+
+      final settings = await settingsService.getSettings();
+
+      if (settings.companyCode.isEmpty) {
+        throw Exception('Company not set up yet. Please contact your admin.');
+      }
+
+      if (_companyCodeController.text.trim() != settings.companyCode) {
+        throw Exception('Invalid company code. Please check with your admin.');
+      }
+
+      final newUser = UserModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         username: _usernameController.text.trim(),
         password: _passwordController.text,
         companyCode: _companyCodeController.text.trim(),
         role: _selectedRole,
       );
 
+      final success = await authService.addUser(newUser);
+
       if (!mounted) return;
 
       if (success) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful! Please login.'),
+            backgroundColor: AppColors.success,
+          ),
         );
+        Navigator.of(context).pop();
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text(AppStrings.invalidLogin)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Username already exists. Please choose another.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -69,6 +94,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Register'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -80,13 +110,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Icon(
-                    Icons.local_parking,
+                    Icons.person_add,
                     size: 64,
                     color: AppColors.primary,
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    AppStrings.appName,
+                    'Create Account',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 24,
@@ -96,10 +126,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    AppStrings.login,
+                    'Register as an operator or valet',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -117,12 +147,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.person),
                             ),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Please enter username';
-                              }
-                              return null;
-                            },
+                            validator: (v) =>
+                                Validators.validateRequired(v, 'username'),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -143,12 +169,33 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Please enter password';
-                              }
-                              return null;
-                            },
+                            validator: (v) =>
+                                Validators.validateRequired(v, 'password'),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _confirmPasswordController,
+                            obscureText: _obscureConfirmPassword,
+                            decoration: InputDecoration(
+                              labelText: 'Confirm Password',
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureConfirmPassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscureConfirmPassword =
+                                      !_obscureConfirmPassword,
+                                ),
+                              ),
+                            ),
+                            validator: (v) => Validators.validatePasswordMatch(
+                              v,
+                              _passwordController.text,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -157,13 +204,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               labelText: AppStrings.companyCode,
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.code),
+                              helperText: 'Get this from your admin',
                             ),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Please enter company code';
-                              }
-                              return null;
-                            },
+                            validator: (v) =>
+                                Validators.validateRequired(v, 'company code'),
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
@@ -174,10 +218,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               prefixIcon: Icon(Icons.badge),
                             ),
                             items: const [
-                              DropdownMenuItem(
-                                value: 'admin',
-                                child: Text(AppStrings.admin),
-                              ),
                               DropdownMenuItem(
                                 value: 'operator',
                                 child: Text(AppStrings.operator),
@@ -195,63 +235,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 24),
                           ElevatedButton(
-                            onPressed: _isLoading ? null : _handleLogin,
+                            onPressed: _isLoading ? null : _handleRegister,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 16),
                             ),
                             child: _isLoading
                                 ? const CircularProgressIndicator(
                                     color: Colors.white,
                                   )
                                 : const Text(
-                                    AppStrings.login,
+                                    'Register',
                                     style: TextStyle(fontSize: 16),
                                   ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Don\'t have an account? ',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Register',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Version 1.0.0',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
                     ),
                   ),
                 ],

@@ -7,7 +7,7 @@ import '../providers/parking_provider.dart';
 import '../providers/pass_provider.dart';
 import '../providers/valet_provider.dart';
 import '../providers/settings_provider.dart';
-import '../services/report_service.dart';
+import 'login_screen.dart';
 import 'pass_list_screen.dart';
 import 'settings_screen.dart';
 import 'reports_screen.dart';
@@ -21,7 +21,6 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final ReportService _reportService = ReportService();
 
   @override
   void initState() {
@@ -56,7 +55,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onPressed: () async {
               await authProvider.logout();
               if (!mounted) return;
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
             },
           ),
         ],

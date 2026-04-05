@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../constants/storage_keys.dart';
+import '../models/pass_model.dart';
 import '../models/settings_model.dart';
 import '../models/vehicle_entry_model.dart';
 import 'local_storage_service.dart';
@@ -25,12 +26,14 @@ class ParkingService {
       VehicleEntryModel.fromJson,
     );
 
-    final activeEntry = entries.firstWhere(
+    final alreadyParked = entries.any(
       (e) =>
           e.vehicleNumber.toUpperCase() == vehicleNumber.toUpperCase() &&
           e.status == 'parked',
-      orElse: () => throw Exception('Vehicle already parked'),
     );
+    if (alreadyParked) {
+      throw Exception('Vehicle already parked');
+    }
 
     final settings = await getSettings();
     final ticketId =
@@ -81,13 +84,18 @@ class ParkingService {
 
     double fee = 0;
     if (entry.passId != null && entry.passId!.isNotEmpty) {
-      final passes = await _storage.getList(StorageKeys.passesList, (json) {
-        final p = Map<String, dynamic>.from(json);
-        return (p['endDate'] != null &&
-            DateTime.parse(p['endDate']).isAfter(now) &&
-            DateTime.parse(p['startDate']).isBefore(now));
-      });
-      if (passes.isEmpty) {
+      final allPasses = await _storage.getList(
+        StorageKeys.passesList,
+        PassModel.fromJson,
+      );
+      final validPass = allPasses.where(
+        (p) =>
+            p.vehicleNumber.toUpperCase() == entry.vehicleNumber.toUpperCase() &&
+            p.status == 'active' &&
+            DateTime.parse(p.startDate).isBefore(now) &&
+            DateTime.parse(p.endDate).isAfter(now),
+      );
+      if (validPass.isEmpty) {
         fee = _calculateFee(entry.vehicleType, durationMinutes, settings);
       }
     } else {
@@ -233,9 +241,10 @@ class ParkingService {
     }
 
     if (hours <= 1) {
-      return settings.firstHourCharge;
+      return baseFee > 0 ? baseFee : settings.firstHourCharge;
     } else if (hours <= 24) {
-      return settings.firstHourCharge +
+      final firstHour = baseFee > 0 ? baseFee : settings.firstHourCharge;
+      return firstHour +
           ((hours - 1).ceil() * settings.additionalHourCharge);
     } else {
       return settings.fullDayCharge * (hours / 24).ceil();
