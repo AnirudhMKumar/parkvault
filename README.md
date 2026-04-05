@@ -1,174 +1,174 @@
-# 🅿️ ParkVault
-
-> **Smart parking management, zero infrastructure.** Track vehicles, manage passes, handle valet — all offline, all beautiful.
-
----
-
 <div align="center">
+  
+# 🅿️ ParkVault 🚙
+  
+**Next-Generation Offline-First Parking Management System**
 
-![Flutter](https://img.shields.io/badge/Flutter-3.11.4-02569B?logo=flutter&logoColor=white)
-![Dart](https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart&logoColor=white)
-![Offline-First](https://img.shields.io/badge/Offline--First-Yes-2ECC71)
-![No Backend](https://img.shields.io/badge/No%20Backend-Required-F39C12)
-![License](https://img.shields.io/badge/License-MIT-3498DB)
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev/)
+[![Offline First](https://img.shields.io/badge/Architecture-Offline_First-2ea44f?style=for-the-badge)](#)
+[![State](https://img.shields.io/badge/State-Provider-orange?style=for-the-badge)](#)
+
+*Manage unlimited vehicles, staff, and valet tasks—entirely offline, with zero server costs.*
 
 </div>
 
 ---
 
-## 📖 What is ParkVault?
+## 📖 Welcome to ParkVault
 
-ParkVault is a modern, offline-first parking management application built with Flutter. It handles everything from vehicle entry/exit ticketing to valet parking workflows, pass subscriptions, FASTag simulation, and detailed analytics — **without needing a single server**.
+**ParkVault** is a production-ready, open-source Flutter application designed to solve complex parking lot logistics without relying on the cloud. 
 
-All data lives on-device using `SharedPreferences` as a lightweight JSON store. Perfect for single-lot operators, small parking businesses, or anyone who wants a reliable system that works even when the internet doesn't.
-
----
-
-## ✨ Key Features
-
-| | |
-|---|---|
-| 🎫 **Auto Ticket Generation** | Vehicle entry/exit with unique ticket IDs, timestamps, and fee calculation. |
-| 📸 **Vehicle Capture** | Built-in camera feature to securely log vehicle pictures upon entry! |
-| 🪪 **Pass Management** | Monthly, Weekly, VIP & Staff passes with validity tracking. |
-| 🧑‍💼 **Valet Parking** | 5-step workflow: `vehicle_in` → `parked` → `out_request` → `ready_to_out` → `delivered`. |
-| 📡 **FASTag Simulation** | Simulated electronic toll-style entry/exit logging. |
-| 📱 **QR Code Scanning** | Scan vehicle tickets for quick lookup and processing. |
-| 📊 **Reports & Charts** | Revenue breakdowns, occupancy trends, and vehicle type analytics. |
-| 🏢 **Multi-Location Support** | Configure multiple parking lots from a single app. |
-| 🔐 **Self-Registration & Roles** | Built-in user, operator & valet onboarding securely linked to a company code. |
-| 📴 **100% Offline** | No backend, no API calls, no internet required — ever. |
-| 🎨 **Premium Aesthetic** | Stunning dark navy design with smooth, glowing effects globally. |
+If you are a **developer learning Flutter**, this repository serves as an excellent case study in:
+- 📱 Building **Offline-First** applications using `SharedPreferences` for complex, nested data tracking.
+- 🏗️ Utilizing **Provider** for clean, scalable state management without boilerplate.
+- 🔑 Managing **Role-Based Access Control (RBAC)** completely on-device.
+- 📸 Native hardware integration (Camera and Gallery via `image_picker`).
 
 ---
 
-## 📸 Screenshots
+## ✨ Features at a Glance
 
-> _Screenshots coming soon!_
->
-> We're capturing polished device mockups of the Dashboard, Entry/Exit screens, Valet workflow, Pass management, and Reports.
-
----
-
-## 🛠 Tech Stack
-
-| Layer | Technology |
-|---|---|
-| **Framework** | [Flutter](https://flutter.dev/) 3.11.4+ |
-| **Language** | [Dart](https://dart.dev/) 3.0+ |
-| **State Management** | [Provider](https://pub.dev/packages/provider) |
-| **Local Storage** | [shared_preferences](https://pub.dev/packages/shared_preferences) |
-| **QR Library** | [mobile_scanner](https://pub.dev/packages/mobile_scanner) & qr_flutter |
-| **Photo / Camera** | [image_picker](https://pub.dev/packages/image_picker) |
-| **Launcher Icon** | [flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons) |
-| **Charts** | [fl_chart](https://pub.dev/packages/fl_chart) |
-| **Icons & Style** | iconsax & lottie |
+| 🏎️ Vehicle Workflows | 👨‍💻 Management & Settings | 💼 Valet & Extras |
+|:---|:---|:---|
+| **Dynamic Ticketing:** Auto-ID generation (`SP-001`), timestamping, & cost projection. | **Multi-Role Login:** Admin, Operator, and Valet accounts securely verified on-device. | **Valet State Machine:** `In` → `Parked` → `Out Req` → `Ready` → `Delivered`. |
+| **Pass Ecosystem:** Support for Monthly, Staff, and VIP passes that automatically waive calculation fees. | **Camera Capture:** Snap & save vehicle plates/conditions directly to local storage at entry! | **FASTag Simulation:** Virtual ledger to mimic high-speed electronic toll collection modes. |
+| **Complex Pricing Trees:** Variable pricing by vehicle type (Bike, SUV, Minibus) × Duration tiers. | **Interactive Dashboards:** Real-time occupancy trackers and revenue visualizations (fl_chart). | **Dynamic Settings:** Read/Write configs for lot capacity, pricing algorithms & company codes. |
 
 ---
 
-## 🚀 Getting Started
+## 🧠 Educational Deep-Dive: How it Works
+
+We built ParkVault to be robust yet simple to understand. Click the sections below to look under the hood!
+
+<details>
+<summary><b>1️⃣ 100% Offline Database Architecture</b></summary>
+<br>
+
+How do we query and store complex relationships (Users, Vehicles, Valet Tasks, Passes) without SQLite or Firebase? We built a strongly-typed generic wrapper around `SharedPreferences`.
+
+Every `Service` uses our `LocalStorageService` to fetch JSON lists, hydrate them into Dart `Models`, and persist them back.
+
+```dart
+// Example: Persisting a Valet Task Offline
+Future<ValetTaskModel> createTask({required String vehicleNumber}) async {
+  // 1. Fetch current list from device disk
+  final tasks = await _storage.getList(
+    StorageKeys.valetTasks, 
+    ValetTaskModel.fromJson,
+  );
+  
+  // 2. Hydrate & Append
+  final task = ValetTaskModel(
+    taskId: 'VT${_uuid.v4()}', 
+    vehicleNumber: vehicleNumber,
+    status: 'vehicle_in'
+  );
+  tasks.add(task);
+  
+  // 3. Serialize and save back to disk instantly
+  await _storage.setList(StorageKeys.valetTasks, tasks, (t) => t.toJson());
+  return task;
+}
+```
+</details>
+
+<details>
+<summary><b>2️⃣ Provider-Driven State Management</b></summary>
+<br>
+
+We utilize the `provider` package to decouple UI from Business Logic. The app is wrapped at the very top level inside a `MultiProvider`:
+
+- `AuthProvider`: Manages the JWT/Session-equivalent local tokens.
+- `SettingsProvider`: Notifies the app if global pricing or app rules change.
+- `ParkingProvider` / `ValetProvider` / `PassProvider`: Domain-driven arrays broadcasting lists of vehicles to the UI safely.
+
+By using `context.watch<ParkingProvider>()`, our dashboard pie-charts silently refresh the exact moment a car enters or leaves the premises!
+</details>
+
+<details>
+<summary><b>3️⃣ Hardware: Local File Storage & Camera</b></summary>
+<br>
+
+To take vehicle pictures offline, we don't just use `image_picker`—we persist the images permanently to the device's application documents directory so they don't get wiped by the OS cache cleaner:
+
+```dart
+// Native hardware bridging!
+final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+
+final appDir = await getApplicationDocumentsDirectory();
+final savedImage = await File(image.path).copy('${appDir.path}/vehicle_$id.jpg');
+
+// The UI later renders natively using Image.file()
+```
+</details>
+
+---
+
+## 🚀 Quick Start Guide
 
 ### Prerequisites
+You need [Flutter](https://docs.flutter.dev/get-started/install) installed (minimum `3.11.4`) and [Dart](https://dart.dev/get-dart) `3.0+`.
 
-- **Flutter SDK** 3.11.4 or higher
-- **Dart SDK** 3.0 or higher
-- iOS Simulator, connected Android device or Windows Desktop.
-
-### Installation
-
+### Zero to Running in 3 Steps
 ```bash
-# 1. Clone the repository
+# 1. Clone the code locally
 git clone https://github.com/AnirudhMKumar/parkvault.git
 cd parkvault
 
-# 2. Install dependencies
+# 2. Grab dependencies
 flutter pub get
 
-# 3. Generate the launcher icons
-flutter pub run flutter_launcher_icons
-
-# 4. Run the app
+# 3. Launch the app (Emulator, Windows Desktop, or Physical Device!)
 flutter run
 ```
 
-### Build APK
-
-```bash
-# Debug APK
-flutter build apk --debug
-
-# Release APK
-flutter build apk --release
-```
+> **💡 Pro Tip for First Run:** When you launch the app, you will be taken to the **Setup Screen**. The **Company Code** you create here acts as your master key. Operators and Valets *must* have this code to self-register via the app!
 
 ---
 
-## 🔄 How It Works
+## 📸 Core Workflows
 
-### First-Run & Accounts
+### 1. Registration & Login
+- If the app is opened for the first time, an `Admin` is initialized.
+- Afterwards, employees tap **"Register"**, enter the Admin's `Company Code`, and create secure local accounts.
 
-```
-Splash Screen → Setup Screen (create admin & set master configurations) → Login & Self Registration
-```
-Anyone with the master **Company Code** can register themselves as an Operator or a Valet via the app.
+### 2. Vehicle Entry
+- Select a vehicle type.
+- Enter Plate Number.
+- **[Optional]** Capture the vehicle using the camera button (Saved offline natively).
+- **[Automated]** If a 'Valid Pass' is detected matching that plate, the fee is set to 0 automatically.
 
-### Entry Screen 
-
-1. Select vehicle type (Car, Bike, Truck, SUV, Taxi, etc).
-2. Enter vehicle number. 
-3. (Optional) Capture a vehicle photo using the device camera.
-4. System checks for active passes — applies ₹0 automatically based on real-time pass validity rules!
-5. Auto-computes tickets based on customizable per-vehicle fees or hourly global defaults.
-
-### Exit Screen
-
-1. Scan QR or manually enter ticket ID.
-2. System calculates duration and complex fees dynamically.
-3. Payment is securely recorded offline.
-
-### Reports & Valets
-
-- Beautiful graphs showing daily revenue, fastag stats, and entries!
-- Dedicated valet screens simulating key flow management efficiently!
+### 3. Analytics & Settings
+- Admins see total revenue parsed securely from the local JSON ledger.
+- Custom adjustments can be made via the built-in **Settings Editor** (Change 2-Wheeler config, override base fee mapping!).
 
 ---
 
-## 📐 Business Rules
+## 🛠 Tech Stack Overview
 
-| Rule | Detail |
-|---|---|
-| **Ticket IDs** | Auto-generated: `{prefix}-{sequence}` (default `SP-0001`) |
-| **Vehicle Numbers** | Always stored uppercase |
-| **Fee Calculation** | Pass holders = 0; else applies base vehicle fees + extra hour logic! |
-| **OTP** | Random 6-digit string generated for valet task verification |
-| **Data Persistence** | SharedPreferences automatically loads upon boot. |
-
----
-
-## 📦 File Layout Highlights
-
-```
-lib/
-├── main.dart                    # App Entry
-├── models/                      # 7 decoupled serialized models
-├── services/                    # Local storage wrappers & persistence logic
-├── providers/                   # Core ChangeNotifiers driving state
-├── screens/                     # Views & Logic integration
-└── utils/                       # Date Formatters & Form validators
-```
+- **Framework:** Flutter (`3.11.4`)
+- **State Logic:** `provider`
+- **Persistence:** `shared_preferences`, `path_provider`
+- **Sensors:** `image_picker`, `mobile_scanner` (for QR checking)
+- **Data Viz:** `fl_chart`
+- **Icon Generation:** `flutter_launcher_icons`
 
 ---
 
-## 📄 License
+## 🤝 Want to contribute?
 
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+We love pull requests! If you're a developer and want to hone your Flutter skills, here are amazing features you could build:
+- [ ] **PDF Exporting:** Add a button to generate printable receipts.
+- [ ] **Dark Mode Toggle:** Implement a dynamic theme switcher based on `SettingsProvider`.
+- [ ] **Cloud Syncing Optionality:** (Advanced) Create an abstract `FirebaseStorageService` to sync local data if the user toggles internet on.
+
+Fork the repo, make a branch, and submit a PR! 
 
 ---
 
 <div align="center">
-
-**Built with ❤️ using Flutter**
-
-*No servers. No APIs. Just parking, perfected.*
-
+<b>Developed with ❤️ to make parking smarter, greener, and entirely offline.</b>
+<br><br>
+<img src="https://img.shields.io/badge/Made%20for-Flutter%20Devs-02569B?style=flat-square&logo=flutter" />
 </div>
