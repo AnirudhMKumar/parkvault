@@ -7,9 +7,10 @@
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev/)
 [![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev/)
 [![Offline First](https://img.shields.io/badge/Architecture-Offline_First-2ea44f?style=for-the-badge)](#)
+[![AI Powered](https://img.shields.io/badge/AI-Computer_Vision-8A2BE2?style=for-the-badge)](#)
 [![State](https://img.shields.io/badge/State-Provider-orange?style=for-the-badge)](#)
 
-*Manage unlimited vehicles, staff, and valet tasks—entirely offline, with zero server costs.*
+*Manage unlimited vehicles, staff, and valet tasks locally, powered by a Cloud AI Engine for automated Plate Extraction.*
 
 </div>
 
@@ -105,10 +106,24 @@ final savedImage = await File(image.path).copy('${appDir.path}/vehicle_$id.jpg')
 
 ---
 
+<details>
+<summary><b>4️⃣ AI Computer Vision Edge Server</b></summary>
+<br>
+
+The project features a decoupled **Python Backend API** hosted completely free on Hugging Face Spaces. When an operator snaps a photo of a vehicle, the Flutter app beams it directly over `http`.
+
+The AI server utilizes **PyTorch** and **EasyOCR** to execute visual bounding boxes, concatenate fragmented license plate letters sequentially, and return a pristine Plate String seamlessly back to the mobile UI in milliseconds!
+</details>
+
+---
+
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
 You need [Flutter](https://docs.flutter.dev/get-started/install) installed (minimum `3.11.4`) and [Dart](https://dart.dev/get-dart) `3.0+`.
+
+> **⚠️ Setting up the AI:** If you want to use the Computer Vision capabilities, you must host the provided `backend/` engine. Please read the full instructions in [handover_docs/SETUP_GUIDE.md](handover_docs/SETUP_GUIDE.md)!
+
 
 ### Zero to Running in 3 Steps
 ```bash
@@ -150,6 +165,7 @@ flutter run
 - **Framework:** Flutter (`3.11.4`)
 - **State Logic:** `provider`
 - **Persistence:** `shared_preferences`, `path_provider`
+- **AI Core (Python):** `FastAPI`, `PyTorch`, `EasyOCR`
 - **Sensors:** `image_picker`, `mobile_scanner` (for QR checking)
 - **Data Viz:** `fl_chart`
 - **Icon Generation:** `flutter_launcher_icons`
