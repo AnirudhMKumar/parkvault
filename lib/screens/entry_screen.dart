@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../constants/app_colors.dart';
 import '../constants/app_strings.dart';
 import '../models/pass_model.dart';
@@ -53,6 +55,37 @@ class _EntryScreenState extends State<EntryScreen> {
     });
   }
 
+  Future<void> _analyzeImage(File imageFile) async {
+    setState(() => _isLoading = true);
+    try {
+      // Bound directly to the live Hugging Face AI Server
+      final uri = Uri.parse('https://zenor20-parkvault-ai.hf.space/detect-plate');
+      var request = http.MultipartRequest('POST', uri);
+      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+      
+      var response = await request.send();
+      if (response.statusCode == 200) {
+        var responseData = await response.stream.bytesToString();
+        var data = jsonDecode(responseData);
+        if (data['plate'] != null && data['plate'] != '') {
+          setState(() {
+            _vehicleNumberController.text = data['plate'];
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Auto-detected plate: ${data['plate']}')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('OCR API Error: $e');
+      // Just fail silently if the AI server isn't running
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   void dispose() {
     _vehicleNumberController.dispose();
@@ -81,6 +114,7 @@ class _EntryScreenState extends State<EntryScreen> {
         setState(() {
           _vehicleImage = savedImage;
         });
+        await _analyzeImage(savedImage);
       }
     } catch (e) {
       if (!mounted) return;
@@ -111,6 +145,7 @@ class _EntryScreenState extends State<EntryScreen> {
         setState(() {
           _vehicleImage = savedImage;
         });
+        await _analyzeImage(savedImage);
       }
     } catch (e) {
       if (!mounted) return;
